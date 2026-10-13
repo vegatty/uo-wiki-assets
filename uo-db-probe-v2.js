@@ -1,0 +1,1 @@
+(function () { function init() { var el = document.getElementById('uo-db-external-test'); if (el) el.textContent = '別ファイル名でも読み込み成功！'; } if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init(); }());
