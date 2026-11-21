@@ -11,17 +11,25 @@
   var IMAGE_NAME = 'atlas_trammel_test.png';
   function start() {
     var root = document.getElementById(ROOT_ID);
-    if (!root || root.dataset.initialized === 'yes') { return; }
+    if (!root) { return; }
+    if (root.dataset.initialized === 'yes') { return; }
     root.dataset.initialized = 'yes';
     function elem(id) { return root.querySelector('[data-atlas="' + id + '"]'); }
     var status = elem('status'), shardSelect = elem('shard'), results = elem('results'), count = elem('count');
     var mapBox = elem('map'), coord = elem('coordinates'), search = elem('search');
-    if (!status || !shardSelect || !results || !count || !mapBox || !coord || !search || !elem('reload')) { return; }
+    if (!status) { return; }
+    status.textContent = '外部JS実行中：画面部品を確認しています';
+    var required = ['shard','results','count','map','coordinates','search','reload'];
+    var missing = required.filter(function (key) { return !elem(key); });
+    if (missing.length) { status.textContent = '画面部品が見つかりません：' + missing.join(', '); status.style.background = '#a11e37'; return; }
     function report(message, type) {
       status.textContent = message;
       status.style.background = type === 'ok' ? '#08783d' : type === 'error' ? '#a11e37' : '#956500';
     }
-    SHARDS.forEach(function (shard) { shardSelect.add(new Option(shard, shard)); });
+    try {
+      SHARDS.forEach(function (shard) { shardSelect.add(new Option(shard, shard)); });
+    } catch (error) { report('シャード一覧の作成に失敗：' + error.message, 'error'); return; }
+    report('シャード一覧OK・地図画像を確認中');
     shardSelect.value = 'Asuka';
     var images = document.querySelectorAll('img'), imageUrl = '';
     for (var i = 0; i < images.length; i++) {
@@ -92,17 +100,25 @@
         refresh();
       } catch (e) { report('地図初期化失敗：' + e.message, 'error'); }
     }
-    if (window.L) { setupMap(); return; }
+    if (window.L) { report('Leaflet検出・地図を初期化中'); setupMap(); return; }
+    report('Leafletを読み込み中');
     var css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(css);
     var script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.onload = setupMap;
+    script.onload = function () { report('Leaflet読込成功・地図初期化中'); setupMap(); };
     script.onerror = function () { report('Leafletの外部読み込みに失敗しました', 'error'); };
     document.head.appendChild(script);
   }
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); }
-  else { start(); }
+  function safeStart() {
+    try { start(); } catch (error) {
+      var root = document.getElementById(ROOT_ID);
+      var status = root && root.querySelector('[data-atlas="status"]');
+      if (status) { status.textContent = '外部JS実行エラー：' + error.message; status.style.background = '#a11e37'; }
+    }
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', safeStart); }
+  else { safeStart(); }
 })();
