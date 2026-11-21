@@ -14,7 +14,8 @@
     if (!root) { return; }
     if (root.dataset.initialized === 'yes') { return; }
     root.dataset.initialized = 'yes';
-    function elem(id) { return root.querySelector('[data-atlas="' + id + '"]'); }
+    // @Wiki may strip data-* attributes from form controls. Use stable element IDs.
+    function elem(id) { return document.getElementById('atlas-shop-' + id); }
     var status = elem('status'), shardSelect = elem('shard'), results = elem('results'), count = elem('count');
     var mapBox = elem('map'), coord = elem('coordinates'), search = elem('search');
     if (!status) { return; }
@@ -115,7 +116,7 @@
   function safeStart() {
     try { start(); } catch (error) {
       var root = document.getElementById(ROOT_ID);
-      var status = root && root.querySelector('[data-atlas="status"]');
+      var status = document.getElementById('atlas-shop-status');
       if (status) { status.textContent = '外部JS実行エラー：' + error.message; status.style.background = '#a11e37'; }
     }
   }
